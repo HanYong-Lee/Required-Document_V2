@@ -10,6 +10,13 @@
       --kt-dark:#111827;
       --kt-gray:#6b7280;
       --radius:16px;
+
+    #required {
+      list-style: none;
+      margin: 8px 0 0 0;   /* 기존 ul의 좌측 여백 초기화 */
+      padding-left: 0;     /* 브라우저 기본 패딩 제거 */
+    }
+    #required li::marker { content: ""; }
     }
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Malgun Gothic,sans-serif;margin:0;background:#f8fafc;color:#0f172a}
