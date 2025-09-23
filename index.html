@@ -28,9 +28,10 @@
     }
     #visitor .visitor li {
       margin: 4px 0;
+    }
     .sep{border:0;border-top:1px solid #e2e8f0;margin:12px 0}
     #msg{margin-top:8px}
-    }
+    
     
     
     
@@ -111,32 +112,64 @@
   </main>
 
   <script>
+    // ====== 공통 상태 ======
     const state = {
-      data:null,
-      selected:{ a:'', b:'', c:'' }
+      data: null,
+      idx: { one: new Map(), two: new Map() }, // 정규화 인덱스(상세1 / 상세2)
     };
 
+    // ====== 정규화 유틸 ======
+    const stripBOM = s => String(s ?? '').replace(/\uFEFF/g, '');
+    const norm = s => stripBOM(s).trim(); // 필요하면 .replace(/\s+/g,' ')로 공백 접기도 가능
+    const key12 = (a,b) => `${norm(a)}||${norm(b)}`;
+
+    // ====== 데이터 로드 & 인덱스 구축 ======
     async function loadData(){
-      const res = await fetch('data.json',{cache:'no-store'});
+      const res = await fetch('data.json', { cache: 'no-store' });
       state.data = await res.json();
-      // ① 채우기
+
+      // ① 채우기 (원본 값 그대로 보여줌)
       const type1 = document.getElementById('type1');
-      state.data.options['업무처리유형'].forEach(v=>{
-        const o=document.createElement('option'); o.value=v; o.textContent=v; type1.appendChild(o);
+      (state.data.options?.['업무처리유형'] || []).forEach(v=>{
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        type1.appendChild(o);
+      });
+
+      // 인덱스 구축: 상세유형1 (키: t1)
+      const lv1 = state.data.options?.['상세유형1'] || {};
+      Object.keys(lv1).forEach(k=>{
+        state.idx.one.set(norm(k), lv1[k]);
+      });
+
+      // 인덱스 구축: 상세유형2 (키: t1||t2)
+      const lv2 = state.data.options?.['상세유형2'] || {};
+      Object.keys(lv2).forEach(k=>{
+        const [a,b] = String(k).split('||');
+        state.idx.two.set(key12(a,b), lv2[k]);
       });
     }
 
+    // ====== UI 채우기 ======
     function fillDetail1(){
       const t1 = document.getElementById('type1').value;
       const type2 = document.getElementById('type2');
       type2.innerHTML = '<option value="">선택하세요</option>';
-      const map = state.data.options['상세유형1'][t1] || [];
-      map.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; type2.appendChild(o); });
-      type2.disabled = !map.length;
+
+      // 정규화 인덱스에서 안전 조회
+      const map = state.idx.one.get(norm(t1)) || [];
+      map.forEach(v=>{
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        type2.appendChild(o);
+      });
+      type2.disabled = map.length === 0;
+
       // reset ③
       const type3 = document.getElementById('type3');
       type3.innerHTML = '<option value="">먼저 ②를 선택</option>';
       type3.disabled = true;
+
       clearResult();
     }
 
@@ -145,10 +178,16 @@
       const t2 = document.getElementById('type2').value;
       const type3 = document.getElementById('type3');
       type3.innerHTML = '<option value="">선택하세요</option>';
-      const key = `${t1}||${t2}`;
-      const map = state.data.options['상세유형2'][key] || [];
-      map.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; type3.appendChild(o); });
-      type3.disabled = !map.length;
+
+      // t1||t2 정규화 키로 안전 조회
+      const map = state.idx.two.get(key12(t1,t2)) || [];
+      map.forEach(v=>{
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        type3.appendChild(o);
+      });
+      type3.disabled = map.length === 0;
+
       clearResult();
     }
 
@@ -157,12 +196,21 @@
       const t2 = document.getElementById('type2').value;
       const t3 = document.getElementById('type3').value;
       if(!t1 || !t2 || !t3){ clearResult(); return; }
-      const rec = state.data.records.find(r=> r['업무처리유형']===t1 && r['상세유형1']===t2 && r['상세유형2']===t3 );
+
+      // records도 정규화 비교로 안전 매칭
+      const rec = (state.data.records || []).find(r =>
+        norm(r['업무처리유형']) === norm(t1) &&
+        norm(r['상세유형1'])   === norm(t2) &&
+        norm(r['상세유형2'])   === norm(t3)
+      );
       if(!rec){ clearResult(); return; }
+
       const result = document.getElementById('result');
-      const ul = document.getElementById('required'); ul.innerHTML='';
+      const ul = document.getElementById('required'); ul.innerHTML = '';
       (rec['필수서류'] || []).forEach(item=>{
-        const li=document.createElement('li'); li.textContent=item; ul.appendChild(li);
+        const li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
       });
 
       const visitorWrap = document.getElementById('visitor'); visitorWrap.innerHTML='';
@@ -171,48 +219,46 @@
         const box = document.createElement('div'); box.className='visitor';
         const title = document.createElement('div'); title.innerHTML = `<span class="pill">${section}</span>`;
         const l = document.createElement('ul');
-        byVisitor[section].forEach(i=>{ const li=document.createElement('li'); li.textContent=i; l.appendChild(li); });
-        box.appendChild(title); box.appendChild(l); visitorWrap.appendChild(box);
+        (byVisitor[section] || []).forEach(i=>{
+          const li = document.createElement('li'); li.textContent = i; l.appendChild(li);
+        });
+        box.appendChild(title); box.appendChild(l);
+        visitorWrap.appendChild(box);
       });
 
-      result.style.display='block';
+      // (안내문자 UI를 쓰신다면) 방문자 선택 박스 갱신 & 메시지 초기화
+      if (typeof fillVisitorSelect === 'function') fillVisitorSelect(byVisitor);
+      const msgEl = document.getElementById('msg'); if (msgEl) msgEl.value = '';
+
+      result.style.display = 'block';
     }
 
     function clearResult(){
       document.getElementById('result').style.display='none';
       document.getElementById('required').innerHTML='';
       document.getElementById('visitor').innerHTML='';
+      const vt = document.getElementById('visitType');
+      if (vt) vt.innerHTML = '<option value="">선택 안 함(조건별 전체 안내)</option>';
+      const ta = document.getElementById('msg'); if (ta) ta.value = '';
     }
 
-    // wire
-    window.addEventListener('DOMContentLoaded', ()=>{
-      loadData().then(loadNotes);
-      document.getElementById('type1').addEventListener('change', fillDetail1);
-      document.getElementById('type2').addEventListener('change', fillDetail2);
-      document.getElementById('type3').addEventListener('change', renderResult);
-    });
-      const composeBtn = document.getElementById('compose');
-      if (composeBtn) composeBtn.addEventListener('click', composeMessage);
-
-      const copyBtn = document.getElementById('copyMsg');
-      if (copyBtn) copyBtn.addEventListener('click', copyMessage);
-        /* ---------- 안내문자 자동완성 헬퍼 ---------- */
+    // ====== (선택) 안내문자 자동완성 헬퍼: 붙여넣으셨다면 그대로 동작 ======
     function getSelectedKeys(){
       const t1 = document.getElementById('type1')?.value || '';
       const t2 = document.getElementById('type2')?.value || '';
       const t3 = document.getElementById('type3')?.value || '';
       return { t1, t2, t3 };
     }
-
     function getCurrentRecord(){
       if(!state?.data?.records) return null;
       const { t1, t2, t3 } = getSelectedKeys();
       if(!t1 || !t2 || !t3) return null;
-      return state.data.records.find(r =>
-        r['업무처리유형']===t1 && r['상세유형1']===t2 && r['상세유형2']===t3
+      return (state.data.records || []).find(r =>
+        norm(r['업무처리유형']) === norm(t1) &&
+        norm(r['상세유형1'])   === norm(t2) &&
+        norm(r['상세유형2'])   === norm(t3)
       ) || null;
     }
-
     function fillVisitorSelect(byVisitor){
       const sel = document.getElementById('visitType');
       if(!sel) return;
@@ -222,16 +268,12 @@
         sel.appendChild(o);
       });
     }
-
     function composeMessage(){
       const rec = getCurrentRecord();
       if(!rec){ alert('먼저 ①②③을 모두 선택하세요.'); return; }
-
       const { t1, t2, t3 } = getSelectedKeys();
       const visitType = document.getElementById('visitType')?.value || '';
       const requiredList = (rec['필수서류'] || []).map(s => `- ${s}`).join('\n') || '-';
-
-      // 조건별(방문자별) 구비서류
       let optionalBlock = '';
       const byVisitor = rec['방문자별추가서류'] || {};
       if (visitType) {
@@ -247,16 +289,12 @@
         }).filter(Boolean);
         if (parts.length) optionalBlock = '\n' + parts.join('\n\n');
       }
-
       const title = `[KT] 구비서류 안내`;
       const header = `${t1} / ${t2} / ${t3}`;
       const tail = `\n\n※ 모든 서류는 발급 3개월 이내 원본 기준\n※ 문의: KT 매장`;
-
       const msg = `${title}\n${header}\n\n[필수 구비서류]\n${requiredList}${optionalBlock}${tail}`;
-      const ta = document.getElementById('msg');
-      if (ta) ta.value = msg;
+      const ta = document.getElementById('msg'); if (ta) ta.value = msg;
     }
-
     function copyMessage(){
       const ta = document.getElementById('msg');
       if(!ta || !ta.value.trim()){ alert('먼저 메시지를 생성하세요.'); return; }
@@ -267,6 +305,21 @@
       }
     }
 
+    // ====== 이벤트 연결 ======
+    window.addEventListener('DOMContentLoaded', ()=>{
+      loadData(); // 데이터/인덱스 준비
+
+      // 드롭다운 계단식
+      document.getElementById('type1').addEventListener('change', fillDetail1);
+      document.getElementById('type2').addEventListener('change', fillDetail2);
+      document.getElementById('type3').addEventListener('change', renderResult);
+
+      // (선택) 안내문자 버튼
+      const composeBtn = document.getElementById('compose');
+      if (composeBtn) composeBtn.addEventListener('click', composeMessage);
+      const copyBtn = document.getElementById('copyMsg');
+      if (copyBtn) copyBtn.addEventListener('click', copyMessage);
+    });
   </script>
 </body>
 </html>
