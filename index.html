@@ -28,6 +28,8 @@
     }
     #visitor .visitor li {
       margin: 4px 0;
+    .sep{border:0;border-top:1px solid #e2e8f0;margin:12px 0}
+    #msg{margin-top:8px}
     }
     
     
@@ -189,6 +191,82 @@
       document.getElementById('type2').addEventListener('change', fillDetail2);
       document.getElementById('type3').addEventListener('change', renderResult);
     });
+      const composeBtn = document.getElementById('compose');
+      if (composeBtn) composeBtn.addEventListener('click', composeMessage);
+
+      const copyBtn = document.getElementById('copyMsg');
+      if (copyBtn) copyBtn.addEventListener('click', copyMessage);
+        /* ---------- 안내문자 자동완성 헬퍼 ---------- */
+    function getSelectedKeys(){
+      const t1 = document.getElementById('type1')?.value || '';
+      const t2 = document.getElementById('type2')?.value || '';
+      const t3 = document.getElementById('type3')?.value || '';
+      return { t1, t2, t3 };
+    }
+
+    function getCurrentRecord(){
+      if(!state?.data?.records) return null;
+      const { t1, t2, t3 } = getSelectedKeys();
+      if(!t1 || !t2 || !t3) return null;
+      return state.data.records.find(r =>
+        r['업무처리유형']===t1 && r['상세유형1']===t2 && r['상세유형2']===t3
+      ) || null;
+    }
+
+    function fillVisitorSelect(byVisitor){
+      const sel = document.getElementById('visitType');
+      if(!sel) return;
+      sel.innerHTML = '<option value="">선택 안 함(조건별 전체 안내)</option>';
+      Object.keys(byVisitor||{}).forEach(k=>{
+        const o = document.createElement('option'); o.value = k; o.textContent = k;
+        sel.appendChild(o);
+      });
+    }
+
+    function composeMessage(){
+      const rec = getCurrentRecord();
+      if(!rec){ alert('먼저 ①②③을 모두 선택하세요.'); return; }
+
+      const { t1, t2, t3 } = getSelectedKeys();
+      const visitType = document.getElementById('visitType')?.value || '';
+      const requiredList = (rec['필수서류'] || []).map(s => `- ${s}`).join('\n') || '-';
+
+      // 조건별(방문자별) 구비서류
+      let optionalBlock = '';
+      const byVisitor = rec['방문자별추가서류'] || {};
+      if (visitType) {
+        const arr = byVisitor[visitType] || [];
+        if (arr.length){
+          optionalBlock = `\n[조건별 구비서류 – ${visitType}]\n` + arr.map(s=>`- ${s}`).join('\n');
+        }
+      } else {
+        const parts = Object.keys(byVisitor).map(k=>{
+          const arr = byVisitor[k] || [];
+          if(!arr.length) return '';
+          return `[조건별 구비서류 – ${k}]\n` + arr.map(s=>`- ${s}`).join('\n');
+        }).filter(Boolean);
+        if (parts.length) optionalBlock = '\n' + parts.join('\n\n');
+      }
+
+      const title = `[KT] 구비서류 안내`;
+      const header = `${t1} / ${t2} / ${t3}`;
+      const tail = `\n\n※ 모든 서류는 발급 3개월 이내 원본 기준\n※ 문의: KT 매장`;
+
+      const msg = `${title}\n${header}\n\n[필수 구비서류]\n${requiredList}${optionalBlock}${tail}`;
+      const ta = document.getElementById('msg');
+      if (ta) ta.value = msg;
+    }
+
+    function copyMessage(){
+      const ta = document.getElementById('msg');
+      if(!ta || !ta.value.trim()){ alert('먼저 메시지를 생성하세요.'); return; }
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(ta.value).then(()=>alert('복사되었습니다.'));
+      } else {
+        ta.select(); document.execCommand('copy'); alert('복사되었습니다.');
+      }
+    }
+
   </script>
 </body>
 </html>
