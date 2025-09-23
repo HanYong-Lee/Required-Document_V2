@@ -10,7 +10,7 @@
       --kt-dark:#111827;
       --kt-gray:#6b7280;
       --radius:16px;
-
+    }
     #required {
       list-style: none;
       margin: 8px 0 0 0;   /* 기존 ul의 좌측 여백 초기화 */
@@ -29,8 +29,9 @@
     #visitor .visitor li {
       margin: 4px 0;
     }
-      
-    }
+    
+    
+    
     *{box-sizing:border-box}
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,Malgun Gothic,sans-serif;margin:0;background:#f8fafc;color:#0f172a}
     header{background:linear-gradient(90deg,var(--kt-blue),#3b82f6);color:#fff;padding:20px 16px}
@@ -181,20 +182,12 @@
       document.getElementById('visitor').innerHTML='';
     }
 
-    // Notes local storage
-    const NOTES_KEY='kt-doc-notes';
-    function loadNotes(){ document.getElementById('notes').value = localStorage.getItem(NOTES_KEY)||''; }
-    function saveNotes(){ localStorage.setItem(NOTES_KEY, document.getElementById('notes').value); alert('저장되었습니다.'); }
-    function resetNotes(){ if(confirm('메모를 모두 삭제할까요?')){ localStorage.removeItem(NOTES_KEY); loadNotes(); } }
-
     // wire
     window.addEventListener('DOMContentLoaded', ()=>{
       loadData().then(loadNotes);
       document.getElementById('type1').addEventListener('change', fillDetail1);
       document.getElementById('type2').addEventListener('change', fillDetail2);
       document.getElementById('type3').addEventListener('change', renderResult);
-      document.getElementById('save').addEventListener('click', saveNotes);
-      document.getElementById('reset').addEventListener('click', resetNotes);
     });
   </script>
 </body>
