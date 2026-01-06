@@ -74,25 +74,29 @@
     <section class="panel is-active" id="t1" role="tabpanel" aria-label="매장&상품 소개">
       <!-- Head 1: Store Intro -->
       <div class="section">
-        <div class="section__head">
-          <h2>KT Plaza 만남로점 소개</h2>
-          <p class="section__desc">우리 매장을 소개하겠습니다!</p>
-        </div>
-    
-        <div class="heroCard">
+        <div class="heroCard heroCard--bg">
           <div class="heroCard__text">
-            <h3 class="fadeLines" data-fade-lines>
-              <span>반갑습니다 KT 플라자 만남로점입니다!</span>
-              <span>무엇을 도와드릴까요?</span>
-            </h3>
-
+            <!-- NEW: heroCard 주제/부제 (Fade In & Out) -->
+            <div class="heroIntro" aria-hidden="true">
+              <div class="heroIntro__line1">안녕하세요, KT플라자입니다!</div>
+              <div class="heroIntro__line2">무엇을 도와드릴까요?</div>
+            </div>
+        
+            <figure class="heroCard__media">
+              <img src="assets/team.png" alt="KT플라자 만남로점 직원 단체사진" loading="lazy" />
+              <figcaption>
+                우리 매장 팀이 도와드리겠습니다.
+                <span class="heroCard__trust">KT 공식 교육을 받은 전문 상담인력이 함께합니다.</span>
+              </figcaption>
+            </figure>
+            
             <!-- ✅ NEW: 핵심 역량(아코디언 카드형 bullets) -->
             <div class="coreBullets">
               <div class="coreBullets__head">
                 <h4 class="coreBullets__title">왜 KT플라자를 선택해야 하나요?</h4>
                 <p class="coreBullets__sub">
-                  통신은 ‘구매’로 끝나지 않습니다.<br />
-                  KT플라자는 시작부터 관리까지 책임지는 공식 창구입니다.
+                  통신은 ‘구매’에서 끝나지 않는 서비스입니다.<br />
+                  KT플라자는 고객 여러분의 통신상품 이용에<br>불편함이 없도록 도와드리는 kt 공식 매장입니다.
                 </p>
               </div>
             
@@ -193,23 +197,13 @@
               </div>
             </div>
           </div>
-
-    
-          <figure class="heroCard__media">
-            <!-- 업로드 후 이미지 교체: assets/team.jpg -->
-            <img src="assets/team.jpg" alt="KT플라자 만남로점 직원 단체사진" loading="lazy" />
-            <figcaption>
-              우리 매장 팀이 도와드리겠습니다.
-              <span class="heroCard__trust">KT 공식 교육을 받은 전문 상담인력이 함께합니다.</span>
-            </figcaption>
-          </figure>
         </div>
       </div>
 
       <!-- Head 2: This Month News (Naver Clip Card) -->
       <div class="section">
         <div class="section__head">
-          <h2>이 달의 소식</h2>
+          <h2>KT Plaza 홍보영상</h2>
           <p class="section__desc">모르시면 손해봅니다!<br>KT에서 제공하는 소식을 동영상으로 만나보세요.</p>
         </div>
       
@@ -229,10 +223,10 @@
         </a>
       </div>
       
-      <!-- Head 3: 판매상품 소개 -->
+      <!-- Head 3: 판매상품/소식 소개 -->
       <div class="section" id="products">
         <div class="section__head">
-          <h2>판매상품 소개</h2>
+          <h2>이 달의 소식</h2>
           <p class="section__desc">핵심만 빠르게 보고, 자세한 내용은 블로그에서 확인하세요.</p>
         </div>
       

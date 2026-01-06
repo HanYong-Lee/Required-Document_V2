@@ -74,56 +74,40 @@
   });
 })();
 
-
 (function () {
   const wrap = document.querySelector("[data-bullet-accord]");
   if (!wrap) return;
 
   const items = Array.from(wrap.querySelectorAll(".bulletCard"));
 
-  // 접근성: 패널에 id 부여 + 버튼 aria-controls 연결
-  items.forEach((li, idx) => {
-    const btn = li.querySelector(".bulletCard__btn");
-    const panel = li.querySelector(".bulletCard__panel");
-    if (!btn || !panel) return;
-
-    const panelId = `bulletCardPanel_${idx}`;
-    panel.id = panelId;
-    btn.setAttribute("aria-controls", panelId);
-
-    // 초기 상태 동기화
-    const isOpen = li.classList.contains("is-open");
-    btn.setAttribute("aria-expanded", String(isOpen));
-  });
-
-  function closeAll(except) {
-    items.forEach((li) => {
-      if (li === except) return;
-      li.classList.remove("is-open");
-      const btn = li.querySelector(".bulletCard__btn");
-      if (btn) btn.setAttribute("aria-expanded", "false");
-    });
-  }
-
+  // 초기 aria 동기화
   items.forEach((li) => {
     const btn = li.querySelector(".bulletCard__btn");
     if (!btn) return;
+    btn.setAttribute("aria-expanded", String(li.classList.contains("is-open")));
+  });
 
-    btn.addEventListener("click", () => {
-      const willOpen = !li.classList.contains("is-open");
+  wrap.addEventListener("click", (e) => {
+    const btn = e.target.closest(".bulletCard__btn");
+    if (!btn) return;
 
-      closeAll(li);
+    const li = btn.closest(".bulletCard");
+    if (!li) return;
 
-      if (willOpen) {
-        li.classList.add("is-open");
-        btn.setAttribute("aria-expanded", "true");
+    const willOpen = !li.classList.contains("is-open");
 
-        // 모바일에서 펼친 항목이 화면에 잘 보이도록 부드럽게 위치 보정(선택)
-        li.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      } else {
-        li.classList.remove("is-open");
-        btn.setAttribute("aria-expanded", "false");
-      }
+    // 하나만 열리게
+    items.forEach((other) => {
+      other.classList.remove("is-open");
+      const b = other.querySelector(".bulletCard__btn");
+      if (b) b.setAttribute("aria-expanded", "false");
     });
+
+    // 선택한 것만 토글
+    if (willOpen) {
+      li.classList.add("is-open");
+      btn.setAttribute("aria-expanded", "true");
+      li.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   });
 })();

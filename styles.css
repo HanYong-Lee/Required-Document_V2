@@ -186,25 +186,144 @@ body{
   color: rgba(10,18,36,.65);
 }
 
-/* Hero card */
+/* =========================
+   Hero Card (Background Image Version)
+   ========================= */
+
 .heroCard{
-  display:grid;
+  display: grid;
   gap: 10px;
   padding: 14px;
+  border-radius: 22px;
 }
-.heroCard__text{padding: 4px 2px 8px}
-.heroCard__media{
-  margin:0;
+
+/* 배경 이미지 카드 */
+.heroCard--bg{
+  position: relative;
+  overflow: hidden;
+
+  background-image: url("assets/mainpage.png"); /* ← 메인 배경 */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  min-height: 420px; /* 모바일 기준 히어로 높이 */
+}
+
+/* 배경 위 가독성 확보용 오버레이 (색만, 이미지 가리지 않음) */
+.heroCard--bg::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(
+    180deg,
+    rgba(11,27,59,.30) 0%,
+    rgba(11,27,59,.55) 55%,
+    rgba(11,27,59,.75) 100%
+  );
+  pointer-events:none;
+  z-index: 0;
+}
+
+/* 내부 콘텐츠를 배경 위로 */
+.heroCard--bg > *{
+  position: relative;
+  z-index: 1;
+}
+
+/* 텍스트 영역 (배경 위에서 읽히게) */
+.heroCard--bg .heroCard__text{
+  color: #fff;
+}
+
+/* =========================
+   Team Image 영역 (배경을 덮지 않게)
+   ========================= */
+
+.heroCard--bg .heroCard__media{
+  background: transparent; /* ← 배경 덮지 않음 */
+  border: none;
+  margin: 0;
   border-radius: 18px;
-  overflow:hidden;
-  border: 1px solid rgba(11,27,59,.08);
+  overflow: hidden;
 }
-.heroCard__media img{width:100%; display:block}
+
+.heroCard__media img{
+  width: 100%;
+  display: block;
+  border-radius: 18px;
+}
+
+/* 캡션만 흰 배경 유지 */
 .heroCard__media figcaption{
   padding: 10px 12px;
   font-size: 12px;
   color: rgba(10,18,36,.65);
-  background: #fff;
+  background: rgba(255,255,255,.92);
+}
+
+/* =========================
+   Optional: Core bullets 카드 톤 정리
+   ========================= */
+
+.heroCard--bg .coreBullets{
+  background: rgba(255,255,255,.96);
+  border-radius: 18px;
+  padding: 12px;
+  color: var(--navy);
+}
+
+/* =========================
+   Mobile fine tuning
+   ========================= */
+
+@media (max-width: 420px){
+  .heroCard--bg{
+    min-height: 380px;
+  }
+}
+
+@media (max-width: 360px){
+  .heroCard--bg{
+    min-height: 340px;
+  }
+}
+
+
+/* =========================
+   heroIntro (Fade In & Out)
+   ========================= */
+
+.heroIntro{
+  margin: 6px 0 12px;
+  color:#fff;
+  animation: heroIntroFade 4.6s ease-in-out infinite;
+}
+.heroIntro__line1{
+  font-weight: 1000;
+  letter-spacing: -.4px;
+  font-size: 22px; /* 첫 줄 크게 */
+  line-height: 1.15;
+  text-shadow: 0 12px 26px rgba(0,0,0,.45);
+}
+.heroIntro__line2{
+  margin-top: 6px;
+  font-weight: 850;
+  font-size: 13px; /* 둘째 줄 작게 */
+  opacity: .95;
+  text-shadow: 0 12px 26px rgba(0,0,0,.45);
+}
+
+@keyframes heroIntroFade{
+  0%   { opacity: 0; transform: translateY(6px); }
+  12%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (max-width: 360px){
+  .heroIntro__line1{ font-size: 19px; }
+  .heroIntro__line2{ font-size: 12px; }
 }
 
 /* Fade lines */
@@ -530,7 +649,7 @@ a, button { touch-action: manipulation; }
 }
 
 /* 카드들이 '살짝 튀어나와' 보이게 상단 하이라이트 */
-.card, .heroCard, .bigCard, .profileCard, .actionTile{
+.card, .heroCard:not(.heroCard--bg), .bigCard, .profileCard, .actionTile{
   background:
     linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,1));
 }
@@ -900,4 +1019,142 @@ a, button { touch-action: manipulation; }
 }
 @media (max-width: 360px){
   .promoCard__media{ height: 280px; }
+}
+
+/* =========================
+   Head Top Image + Overlay Text
+   ========================= */
+
+.headHero{
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 40px rgba(0,0,0,.22);
+  background: #0A1224;
+}
+
+/* 모바일에서 보기 좋게 16:9 비율(원하면 9:16으로 바꿀 수 있음) */
+.headHero__img{
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  filter: saturate(1.05) contrast(1.05);
+}
+
+/* 문구 오버레이 */
+.headHero__overlay{
+  position:absolute;
+  inset: 0;
+  display:flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 16px 16px 18px;
+  color: #fff;
+  /* 텍스트 가독성용 어두운 그라데이션 */
+  background: linear-gradient(180deg, rgba(0,0,0,.00) 35%, rgba(0,0,0,.55) 100%);
+  animation: headFade 4.6s ease-in-out infinite;
+}
+
+.headHero__line1{
+  font-weight: 1000;
+  letter-spacing: -.4px;
+  font-size: 20px;  /* 첫 줄 크게 */
+  line-height: 1.15;
+  text-shadow: 0 10px 24px rgba(0,0,0,.45);
+}
+.headHero__line2{
+  margin-top: 6px;
+  font-weight: 850;
+  font-size: 13px;  /* 두 번째 줄 작게 */
+  opacity: .95;
+  text-shadow: 0 10px 24px rgba(0,0,0,.45);
+}
+
+/* Fade In & Out */
+@keyframes headFade{
+  0%   { opacity: 0; transform: translateY(6px); }
+  12%  { opacity: 1; transform: translateY(0); }
+  70%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* 작은 화면 대응 */
+@media (max-width: 360px){
+  .headHero__line1{ font-size: 18px; }
+  .headHero__line2{ font-size: 12px; }
+}
+
+/* =========================
+   FIX 1) heroCard__media 캡션이 이미지 하단 라운드 덮기
+   ========================= */
+
+.heroCard__media{
+  position: relative;
+  overflow: hidden;       /* figure 라운드 안에서 다 처리 */
+  border-radius: 18px;
+}
+
+/* img는 라운드 제거(figure가 담당), 아래 라운드 노출 방지 */
+.heroCard__media img{
+  position: relative;
+  z-index: 2;            /* 👈 제일 위 */
+  display: block;
+  width: 100%;
+  border-radius: 0 !important;
+}
+
+/* 캡션: 아래 레이어 + 위로 겹치기 */
+.heroCard__media figcaption{
+  position: relative;
+  z-index: 1;            /* 👈 img보다 아래 */
+  margin-top: -11px;     /* 이미지 하단 덮기 */
+  background: rgba(255,255,255,.92);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  box-shadow: 0 -8px 20px rgba(0,0,0,.10);
+}
+
+/* =========================
+   FIX 2) heroCard 배경은 흰색 유지 + 전체 배경을 mainpage.png로 고정
+   ========================= */
+
+/* heroCard--bg가 혹시 남아 있어도 카드 배경은 흰색으로 강제 */
+.heroCard.heroCard--bg{
+  background: #fff !important;
+}
+
+/* 전체 배경 고정 레이어 (모바일/iOS 포함 안정 동작) */
+body{
+  position: relative;
+  background: var(--navy); /* fallback */
+}
+
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("assets/mainpage.png") center / cover no-repeat;
+  transform: translateZ(0);
+}
+
+/* 배경 위 가독성을 위한 어두운 틴트(원하면 투명도 조절) */
+body::after{
+  content:"";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(11,27,59,.55); /* ← 0.45~0.65 사이로 취향 조절 */
+  pointer-events: none;
+}
+
+/* 기존 body에 들어가 있던 흰색 그라데이션 배경은 확실히 무효화 */
+html, body{
+  background: transparent !important;
 }
