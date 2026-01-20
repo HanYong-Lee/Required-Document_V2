@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KT플라자 ADMIN</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .adminWrap{max-width:720px;margin:0 auto;padding:92px 14px 24px}
+    .adminCard{background:#fff;border-radius:22px;border:1px solid rgba(11,27,59,.10);box-shadow:var(--elev-1);padding:14px}
+    .adminGrid{display:grid;gap:10px}
+    .adminRow{display:grid;gap:8px}
+    .adminRow label{font-weight:900;color:var(--navy);font-size:13px}
+    .adminRow input,.adminRow select{
+      height:44px;border-radius:14px;border:1px solid rgba(11,27,59,.14);
+      padding:0 12px;font-weight:800;
+    }
+    .adminBtn{height:46px;border-radius:14px;border:0;background:var(--navy);color:#fff;font-weight:950;cursor:pointer}
+    .adminTable{width:100%;border-collapse:collapse;font-size:12px}
+    .adminTable th,.adminTable td{border-bottom:1px solid rgba(11,27,59,.10);padding:8px 6px;text-align:left;vertical-align:top}
+    .pillMini{display:inline-block;margin:2px 6px 2px 0;padding:4px 8px;border-radius:999px;background:#F2F5FF;border:1px solid rgba(11,27,59,.10);font-weight:850}
+    .muted{color:rgba(10,18,36,.65);font-weight:750}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar__title">
+      <div class="brand">KT플라자</div>
+      <div class="branch">ADMIN</div>
+    </div>
+    <a class="topbar__cta" href="./" aria-label="홈으로">홈으로</a>
+  </div>
+
+  <main class="adminWrap">
+    <div class="adminCard adminGrid">
+      <div class="adminRow">
+        <label>비밀번호</label>
+        <input id="pass" type="password" placeholder="관리자 비밀번호" />
+      </div>
+
+      <div class="adminRow">
+        <label>그룹</label>
+        <select id="group">
+          <option value="day">일별</option>
+          <option value="month">월별</option>
+          <option value="year">연도별</option>
+        </select>
+      </div>
+
+      <div class="adminRow">
+        <label>시작일</label>
+        <input id="start" type="date" />
+      </div>
+
+      <div class="adminRow">
+        <label>종료일</label>
+        <input id="end" type="date" />
+      </div>
+
+      <button class="adminBtn" id="load">조회</button>
+
+      <div id="summary" class="muted"></div>
+      <div id="result"></div>
+    </div>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
