@@ -199,3 +199,24 @@ window.addEventListener("pagehide", ()=>{
   const dur = Date.now() - sessionStart;
   sendEvent({ event:"session_end", durationMs: dur });
 });
+
+function flushOnExit(){
+  // 탭 체류도 마지막으로 한번 찍고
+  const now = Date.now();
+  const dur = now - tabStart;
+  if (dur > 300) {
+    sendEvent({ event:"tab_dwell", tab: activeTab, durationMs: dur });
+  }
+
+  // 세션 종료 찍기
+  const total = now - sessionStart;
+  sendEvent({ event:"session_end", durationMs: total });
+}
+
+// 화면이 백그라운드로 가거나(앱 전환), 탭이 숨겨질 때도 종료 처리
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushOnExit();
+});
+
+// 일부 브라우저에서 더 잘 잡히도록 추가
+window.addEventListener("beforeunload", flushOnExit);
