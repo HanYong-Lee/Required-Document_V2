@@ -21,7 +21,15 @@ document.getElementById("load").addEventListener("click", async ()=>{
   summaryEl.textContent = "조회 중...";
   resultEl.innerHTML = "";
 
-  const res = await fetch(url.toString()).then(r=>r.json()).catch(()=>({ok:false, error:"fetch_failed"}));
+  // 캐시 방지용 ts 파라미터
+  url.searchParams.set("_ts", String(Date.now()));
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    cache: "no-store",
+  }).then(r => r.json())
+    .catch(()=>({ok:false, error:"fetch_failed"}));
+
   if (!res.ok) {
     summaryEl.textContent = "오류: " + (res.error || "unknown");
     return;
