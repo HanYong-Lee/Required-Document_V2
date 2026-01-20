@@ -54,7 +54,6 @@
   });
 
   // ---------- Fade lines: re-trigger when returning to Tab1 ----------
-  // (기본 CSS 애니메이션이지만, 탭 이동 후 다시 들어올 때도 보여주고 싶으면 재실행)
   const reRunFadeLines = () => {
     const container = document.querySelector("#t1 .fadeLines[data-fade-lines]");
     if (!container) return;
@@ -115,7 +114,7 @@
 // =========================
 // Analytics (KT Plaza simple)
 // =========================
-const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzK7T__F4hhaXbSeZ038iU2N0R66jtkktx5qiMGst45rFArff5nQMNOLEeN3AxNyWS_PA/exec"; // <-- APPS_SCRIPT URL 복사
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzK7T__F4hhaXbSeZ038iU2N0R66jtkktx5qiMGst45rFArff5nQMNOLEeN3AxNyWS_PA/exec"; // <-- APPS_SCRIPT URL
 
 function getSessionId(){
   const k = "ktplaza_sid";
@@ -133,20 +132,37 @@ let sessionStart = Date.now();
 let activeTab = "t1";
 let tabStart = Date.now();
 
+// 중복 전송 방지(visibilitychange + pagehide + beforeunload가 겹칠 수 있음)
+let didFlush = false;
+
 function sendEvent(payload){
-  const body = {
+  const bodyObj = {
     ts: Date.now(),
     sessionId: sid,
     url: location.href,
     ua: navigator.userAgent,
     ...payload
   };
-  // keepalive로 언로드 상황에서도 전송 시도
-  fetch(`${ANALYTICS_ENDPOINT}?path=collect`, {
+
+  const url = `${ANALYTICS_ENDPOINT}?path=collect`;
+  const json = JSON.stringify(bodyObj);
+
+  // 1) 가장 안정적: sendBeacon (CORS preflight 없이 전송되는 경우가 많음)
+  if (navigator.sendBeacon) {
+    try {
+      const blob = new Blob([json], { type: "text/plain;charset=UTF-8" });
+      const ok = navigator.sendBeacon(url, blob);
+      if (ok) return;
+    } catch (e) {}
+  }
+
+  // 2) fallback: no-cors + 헤더 없이 전송(응답은 못 읽어도 저장은 됨)
+  fetch(url, {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(body),
+    body: json,
     keepalive: true,
+    mode: "no-cors",
+    cache: "no-store",
   }).catch(()=>{});
 }
 
@@ -157,31 +173,34 @@ sendEvent({ event:"page_view" });
 function recordTabDwell(nextTab){
   const now = Date.now();
   const dur = now - tabStart;
-  if (dur > 300) { // 너무 짧은 노이즈 제외
+  if (dur > 300) {
     sendEvent({ event:"tab_dwell", tab: activeTab, durationMs: dur });
   }
   activeTab = nextTab;
   tabStart = now;
 }
 
-// 탭 버튼 클릭 감지(너의 탭 구현에 맞춰 selector 조정)
+// 탭 버튼 클릭 감지
 document.querySelectorAll(".tab").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const target = btn.getAttribute("data-tab-target") || btn.dataset.tab || "";
-    // target이 "t1/t2/t3" 형태가 되도록 맞춰줘
     if (target) recordTabDwell(target);
   });
 });
 
-// 상담사 카드 클릭: <a class="profileCard" data-consultant="점장">...
+// 상담사 카드 클릭
 document.addEventListener("click", (e)=>{
   const c = e.target.closest("[data-consultant]");
   if (c) {
-    sendEvent({ event:"consultant_click", targetType:"consultant", targetId: c.dataset.consultant || "unknown" });
+    sendEvent({
+      event:"consultant_click",
+      targetType:"consultant",
+      targetId: c.dataset.consultant || "unknown"
+    });
   }
 });
 
-// CTA 클릭: <a data-cta="naver_reserve" data-card="floating">...
+// CTA 클릭
 document.addEventListener("click", (e)=>{
   const a = e.target.closest("[data-cta]");
   if (a) {
@@ -194,29 +213,32 @@ document.addEventListener("click", (e)=>{
   }
 });
 
-// 세션 종료(페이지 나갈 때)
-window.addEventListener("pagehide", ()=>{
-  const dur = Date.now() - sessionStart;
-  sendEvent({ event:"session_end", durationMs: dur });
-});
-
 function flushOnExit(){
-  // 탭 체류도 마지막으로 한번 찍고
+  if (didFlush) return;
+  didFlush = true;
+
   const now = Date.now();
+
+  // 마지막 탭 체류 기록
   const dur = now - tabStart;
   if (dur > 300) {
     sendEvent({ event:"tab_dwell", tab: activeTab, durationMs: dur });
   }
 
-  // 세션 종료 찍기
+  // 세션 종료 기록
   const total = now - sessionStart;
-  sendEvent({ event:"session_end", durationMs: total });
+  if (total > 300) {
+    sendEvent({ event:"session_end", durationMs: total });
+  }
 }
 
-// 화면이 백그라운드로 가거나(앱 전환), 탭이 숨겨질 때도 종료 처리
+// 페이지 나갈 때
+window.addEventListener("pagehide", flushOnExit);
+
+// 화면이 백그라운드로 갈 때(앱 전환 등)
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") flushOnExit();
 });
 
-// 일부 브라우저에서 더 잘 잡히도록 추가
+// 일부 브라우저에서 보강
 window.addEventListener("beforeunload", flushOnExit);
