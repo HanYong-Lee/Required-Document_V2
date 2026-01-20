@@ -111,3 +111,91 @@
     }
   });
 })();
+
+// =========================
+// Analytics (KT Plaza simple)
+// =========================
+const ANALYTICS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzK7T__F4hhaXbSeZ038iU2N0R66jtkktx5qiMGst45rFArff5nQMNOLEeN3AxNyWS_PA/exec"; // <-- APPS_SCRIPT URL 복사
+
+function getSessionId(){
+  const k = "ktplaza_sid";
+  let sid = localStorage.getItem(k);
+  if (!sid) {
+    sid = "s_" + Math.random().toString(36).slice(2) + "_" + Date.now();
+    localStorage.setItem(k, sid);
+  }
+  return sid;
+}
+
+const sid = getSessionId();
+let sessionStart = Date.now();
+
+let activeTab = "t1";
+let tabStart = Date.now();
+
+function sendEvent(payload){
+  const body = {
+    ts: Date.now(),
+    sessionId: sid,
+    url: location.href,
+    ua: navigator.userAgent,
+    ...payload
+  };
+  // keepalive로 언로드 상황에서도 전송 시도
+  fetch(`${ANALYTICS_ENDPOINT}?path=collect`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(body),
+    keepalive: true,
+  }).catch(()=>{});
+}
+
+// 최초 방문
+sendEvent({ event:"page_view" });
+
+// 탭 체류 기록 함수
+function recordTabDwell(nextTab){
+  const now = Date.now();
+  const dur = now - tabStart;
+  if (dur > 300) { // 너무 짧은 노이즈 제외
+    sendEvent({ event:"tab_dwell", tab: activeTab, durationMs: dur });
+  }
+  activeTab = nextTab;
+  tabStart = now;
+}
+
+// 탭 버튼 클릭 감지(너의 탭 구현에 맞춰 selector 조정)
+document.querySelectorAll(".tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const target = btn.getAttribute("data-tab-target") || btn.dataset.tab || "";
+    // target이 "t1/t2/t3" 형태가 되도록 맞춰줘
+    if (target) recordTabDwell(target);
+  });
+});
+
+// 상담사 카드 클릭: <a class="profileCard" data-consultant="점장">...
+document.addEventListener("click", (e)=>{
+  const c = e.target.closest("[data-consultant]");
+  if (c) {
+    sendEvent({ event:"consultant_click", targetType:"consultant", targetId: c.dataset.consultant || "unknown" });
+  }
+});
+
+// CTA 클릭: <a data-cta="naver_reserve" data-card="floating">...
+document.addEventListener("click", (e)=>{
+  const a = e.target.closest("[data-cta]");
+  if (a) {
+    sendEvent({
+      event:"cta_click",
+      targetType:"cta",
+      targetId: a.dataset.cta || "unknown",
+      cardId: a.dataset.card || "default",
+    });
+  }
+});
+
+// 세션 종료(페이지 나갈 때)
+window.addEventListener("pagehide", ()=>{
+  const dur = Date.now() - sessionStart;
+  sendEvent({ event:"session_end", durationMs: dur });
+});
