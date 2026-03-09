@@ -1,29 +1,4 @@
 (() => {
-  // ---------- Intro: tap to skip ----------
-  const intro = document.getElementById("intro");
-  const introVideo = document.getElementById("introVideo");
-  const skipBtn = document.getElementById("skipBtn");
-
-  const hideIntro = () => {
-    if (!intro || intro.classList.contains("is-hidden")) return;
-    intro.classList.add("is-hidden");
-    try { introVideo && introVideo.pause(); } catch (e) {}
-    document.body.style.overflow = "";
-  };
-
-  // Lock scroll while intro is showing
-  if (intro) document.body.style.overflow = "hidden";
-
-  // If video ends, auto-hide
-  if (introVideo) {
-    introVideo.addEventListener("ended", hideIntro);
-    introVideo.addEventListener("error", hideIntro); // fail-safe
-  }
-
-  // Tap anywhere to skip
-  if (intro) intro.addEventListener("click", hideIntro);
-  if (skipBtn) skipBtn.addEventListener("click", (e) => { e.stopPropagation(); hideIntro(); });
-
   // ---------- Tabs ----------
   const tabButtons = Array.from(document.querySelectorAll(".tab"));
   const panels = Array.from(document.querySelectorAll(".panel"));
